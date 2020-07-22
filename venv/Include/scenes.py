@@ -1,6 +1,6 @@
 import pygame
 import pygame_menu
-from game_items import Shape
+from game_items import Wall, Shape
 
 class Scene(object):
 
@@ -27,6 +27,11 @@ class GameplayScene(Scene):
         self.game_frame_heignt = game_frame_height
         self.block_width_height = block_width_height
 
+        # init invisible walls - left, right, bottom
+        self.wall_left = Wall(self.game_frame_left - self.block_width_height, 0, self.block_width_height, screen_y, (0,0,0))
+        self.wall_right = Wall(self.game_frame_left + self.game_frame_width, 0, self.block_width_height, screen_y, (0,0,0))
+        self.wall_bottom = Wall(self.game_frame_left, screen_y, self.game_frame_width, self.block_width_height, (0,0,0))
+
         # init next focused shape
         self.next_focused_shape = Shape(500, 100, self.block_width_height)
 
@@ -34,16 +39,21 @@ class GameplayScene(Scene):
         self.focused_shape = Shape(280,-(40), self.block_width_height)
 
         # init rest of blocks logic
-        
+        self.fixed_shapes = []
     
     def get_scene_type(self):
         return 2
 
     def draw(self, surface):
-        # draw background fill
+        # background fill
         surface.fill((0, 0, 0))
+
+        # walls
+        self.wall_left.draw(surface)
+        self.wall_right.draw(surface)
+        self.wall_bottom.draw(surface)
         
-        # draw frame background and outline
+        # frame background and outline
         pygame.draw.rect(surface, pygame.Color(64, 64, 64), pygame.Rect(self.game_frame_left, self.game_frame_top, self.game_frame_width, self.game_frame_heignt))
         pygame.draw.rect(surface, pygame.Color(255, 255, 255, 255),pygame.Rect(self.game_frame_left, self.game_frame_top, self.game_frame_width,self.game_frame_heignt), 2)
 
@@ -52,21 +62,44 @@ class GameplayScene(Scene):
         for j in range(0, self.screen_y + self.block_width_height, self.block_width_height):
             pygame.draw.rect(surface, pygame.Color(255, 255, 255, 255), pygame.Rect(self.game_frame_left, j, self.game_frame_width, 1))
 
-        # draw focused frame
+        # focused frame
         pygame.draw.rect(surface, pygame.Color(255,255,255,255), pygame.Rect(450,60,120,100), 2)
 
-        # draw next focused shape
+        # next focused shape
         self.next_focused_shape.draw(surface)
 
-        # draw focused shape
+        # focused shape
         self.focused_shape.draw(surface)
 
-        # draw rest of blocks
+        # rest of blocks
+        for rect in self.fixed_shapes:
+            pygame.draw.rect(surface, pygame.Color(255,255,255), rect)
 
     def update(self, events):
         for event in events:
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    pass # focused shape rotate
+                if event.key == pygame.K_SPACE: # focused shape rotate
+                    # self.focused_shape.rotate() # need to fix
+                elif event.key == pygame.K_LEFT: # focused shape move left
+                    self.focused_shape.move_left()
+                    if self.focused_shape.has_collide_wall(self.wall_left):
+                        self.focused_shape.move_right()
+                elif event.key == pygame.K_RIGHT: # focused shape move right
+                    self.focused_shape.move_right()
+                    if self.focused_shape.has_collide_wall(self.wall_right):
+                        self.focused_shape.move_left()
 
+        # walls dont need to be updated
+
+        # next focused shape
+
+        # focused shape
         self.focused_shape.update()
+
+        # collision bottom wall
+        if self.focused_shape.has_collide_wall(self.wall_bottom) or self.focused_shape.has_collide_fixed(self.fixed_shapes):
+            self.focused_shape.move_up()
+            self.fixed_shapes.extend(self.focused_shape.rect_list)
+            self.next_focused_shape.reset_coordinates(280,-(40))
+            self.focused_shape = self.next_focused_shape
+            self.next_focused_shape = Shape(500, 100, self.block_width_height)
