@@ -31,6 +31,7 @@ class GameplayScene(Scene):
         self.wall_left = Wall(self.game_frame_left - self.block_width_height, 0, self.block_width_height, screen_y, (0,0,0))
         self.wall_right = Wall(self.game_frame_left + self.game_frame_width, 0, self.block_width_height, screen_y, (0,0,0))
         self.wall_bottom = Wall(self.game_frame_left, screen_y, self.game_frame_width, self.block_width_height, (0,0,0))
+        self.wall_top = Wall(self.game_frame_left, -(self.block_width_height), self.game_frame_left + self.game_frame_width, self.block_width_height, (0,0,0))
 
         # init next focused shape
         self.next_focused_shape = Shape(500, 100, self.block_width_height)
@@ -39,7 +40,8 @@ class GameplayScene(Scene):
         self.focused_shape = Shape(280,-(40), self.block_width_height)
 
         # init rest of blocks logic
-        self.fixed_shapes = []
+        self.fixed_rects = []
+        self.fixed_rects_color = []
     
     def get_scene_type(self):
         return 2
@@ -72,14 +74,18 @@ class GameplayScene(Scene):
         self.focused_shape.draw(surface)
 
         # rest of blocks
-        for rect in self.fixed_shapes:
-            pygame.draw.rect(surface, pygame.Color(255,255,255), rect)
+        #for rect in self.fixed_rects:
+            #pygame.draw.rect(surface, pygame.Color(255,255,255), rect)
+        for i in range(0, len(self.fixed_rects)):
+            pygame.draw.rect(surface, self.fixed_rects_color[i][0], self.fixed_rects[i])
+            pygame.draw.rect(surface, self.fixed_rects_color[i][1], self.fixed_rects[i], 2)
 
     def update(self, events):
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE: # focused shape rotate
                     # self.focused_shape.rotate() # need to fix
+                    pass
                 elif event.key == pygame.K_LEFT: # focused shape move left
                     self.focused_shape.move_left()
                     if self.focused_shape.has_collide_wall(self.wall_left):
@@ -97,9 +103,18 @@ class GameplayScene(Scene):
         self.focused_shape.update()
 
         # collision bottom wall
-        if self.focused_shape.has_collide_wall(self.wall_bottom) or self.focused_shape.has_collide_fixed(self.fixed_shapes):
+        if self.focused_shape.has_collide_wall(self.wall_bottom) or self.focused_shape.has_collide_fixed(self.fixed_rects):
             self.focused_shape.move_up()
-            self.fixed_shapes.extend(self.focused_shape.rect_list)
+            self.fixed_rects.extend(self.focused_shape.rect_list)
+            self.fixed_rects_color.extend([[self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2]])
+            #for i in range(0, len(self.focused_shape.rect_list)):
+            #    self.fixed_rects.append(self.focused_shape.rect_list[i])
+            #    self.fixed_rects_color.append([self.focused_shape.rgb1, self.focused_shape.rgb2])
             self.next_focused_shape.reset_coordinates(280,-(40))
             self.focused_shape = self.next_focused_shape
             self.next_focused_shape = Shape(500, 100, self.block_width_height)
+            
+        # collision top wall - fixed shapes
+        if self.wall_top.rect.collidelist(self.fixed_rects) is not -1:
+            # game over - return value
+            pass
