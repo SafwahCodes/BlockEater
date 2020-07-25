@@ -14,6 +14,17 @@ class BaseItem(object):
     def update(self):
         raise NotImplementedError
 
+class Grid(BaseItem): # 2d list of colors (maybe)
+
+    def __init__(self):
+        pass
+
+    def draw(self, surface):
+        raise NotImplementedError
+
+    def update(self):
+        raise NotImplementedError
+
 class Wall(BaseItem):
 
     def __init__(self, left, top, width, height, background_color):
@@ -100,16 +111,24 @@ class Shape(BaseItem):
         return False
 
     def move_left(self):
+        self.x -= self.width_height
         for rect in self.rect_list:
             rect.move_ip(-(self.width_height), 0)
 
     def move_right(self):
+        self.x += self.width_height
         for rect in self.rect_list:
             rect.move_ip(self.width_height, 0)
 
     def move_up(self):
+        self.y -= self.width_height
         for rect in self.rect_list:
             rect.move_ip(0, -(self.width_height))
+
+    def move_down(self):
+        self.y += self.width_height
+        for rect in self.rect_list:
+            rect.move_ip(0, self.width_height)
 
     def reset(self, x, y):
         #for rect in
@@ -121,9 +140,7 @@ class Shape(BaseItem):
             pygame.draw.rect(surface, self.rgb2, rect, 2) # rect outline
 
     def update(self):
-        self.y += self.width_height
-        for rect in self.rect_list:
-            rect.move_ip(0, self.width_height)
+        self.move_down()
 
 class shape_coords(Enum):
 

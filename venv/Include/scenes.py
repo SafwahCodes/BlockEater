@@ -18,7 +18,7 @@ class Scene(object):
     
 class GameplayScene(Scene):
 
-    def __init__(self, screen_x, screen_y, game_frame_left, game_frame_top, game_frame_width, game_frame_height, block_width_height):
+    def __init__(self, screen_x, screen_y, game_frame_left, game_frame_top, game_frame_width, game_frame_height, block_width_height, fall_update_factor):
         self.screen_x = screen_x
         self.screen_y = screen_y
         self.game_frame_left = game_frame_left
@@ -26,6 +26,8 @@ class GameplayScene(Scene):
         self.game_frame_width = game_frame_width
         self.game_frame_heignt = game_frame_height
         self.block_width_height = block_width_height
+        self.fall_update_factor = fall_update_factor
+        self.update_factor = 0
 
         # init invisible walls - left, right, bottom
         self.wall_left = Wall(self.game_frame_left - self.block_width_height, 0, self.block_width_height, screen_y, (0,0,0))
@@ -84,8 +86,7 @@ class GameplayScene(Scene):
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE: # focused shape rotate
-                    # self.focused_shape.rotate() # need to fix
-                    pass
+                    self.focused_shape.rotate() # need to fix
                 elif event.key == pygame.K_LEFT: # focused shape move left
                     self.focused_shape.move_left()
                     if self.focused_shape.has_collide_wall(self.wall_left):
@@ -100,7 +101,12 @@ class GameplayScene(Scene):
         # next focused shape
 
         # focused shape
-        self.focused_shape.update()
+        #print(self.update_factor)
+        if self.update_factor == self.fall_update_factor:
+            self.focused_shape.update()
+            self.update_factor = 0
+        else:
+            self.update_factor += 1
 
         # collision bottom wall
         if self.focused_shape.has_collide_wall(self.wall_bottom) or self.focused_shape.has_collide_fixed(self.fixed_rects):

@@ -11,6 +11,7 @@ class Main(object):
         pygame.display.set_caption("Block Eater")
         self.clock = pygame.time.Clock()
         self.main_loop_running = True
+        self.gameplay_fall_update_factor = 45
 
         # init game variables
         self.game_frame_left = game_frame_left
@@ -20,7 +21,7 @@ class Main(object):
         self.block_width_height = block_width_height
 
         # init initial scene
-        self.scene = GameplayScene(self.screen_x, self.screen_y, game_frame_left, game_frame_top, game_frame_width, game_frame_height, block_width_height)
+        self.scene = GameplayScene(self.screen_x, self.screen_y, game_frame_left, game_frame_top, game_frame_width, game_frame_height, block_width_height, self.gameplay_fall_update_factor)
 
     def main_loop(self):
         update_factor = 0
@@ -29,11 +30,11 @@ class Main(object):
             if pygame.event.get(pygame.QUIT):
                 self.main_loop_running = False
 
-            if update_factor == 45: # slows down block fall
-                self.scene.update(pygame.event.get())
-                update_factor = 0
-            else:
-                update_factor += 1
+            #if update_factor == 45: # slows down block fall
+            self.scene.update(pygame.event.get())
+            #    update_factor = 0
+            #else:
+            #    update_factor += 1
 
             self.scene.draw(self.surface)
 
