@@ -93,11 +93,11 @@ class Shape(BaseItem):
     def rotate(self):
         for rect in self.rect_list:
             rect.x -= self.x
-            rect.y = self.y
+            rect.y -= self.y
             x_new = rect.x * math.cos(self.rad) - rect.y * math.sin(self.rad)
             y_new = rect.x * math.sin(self.rad) + rect.y * math.cos(self.rad)
             rect.x = x_new + self.x
-            rect.y = y_new +self.y
+            rect.y = y_new + self.y
 
     def has_collide_wall(self, other_rect):
         if other_rect.rect.collidelist(self.rect_list) is not -1:
