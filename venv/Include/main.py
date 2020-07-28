@@ -41,7 +41,7 @@ class Main(object):
             pygame.display.update()
             self.clock.tick(60)
 
-main = Main(600, 400, 180, 0, 240, 400, 20)
+main = Main(440, 400, 0, 0, 240, 400, 20)
 main.main_loop()
 
 pygame.quit()

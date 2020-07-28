@@ -29,17 +29,22 @@ class GameplayScene(Scene):
         self.fall_update_factor = fall_update_factor
         self.update_factor = 0
 
+        # init focused shape
+        self.focused_shape_x = (int((self.game_frame_width / self.block_width_height) / 2) - 1) * self.block_width_height
+        self.focused_shape_y = -(self.block_width_height * 2)
+        self.focused_shape = Shape(self.focused_shape_x, self.focused_shape_y, self.block_width_height)
+
         # init invisible walls - left, right, bottom
-        self.wall_left = Wall(self.game_frame_left - self.block_width_height, 0, self.block_width_height, screen_y, (0,0,0))
-        self.wall_right = Wall(self.game_frame_left + self.game_frame_width, 0, self.block_width_height, screen_y, (0,0,0))
+        self.wall_left = Wall(self.game_frame_left - self.block_width_height, self.focused_shape_y, self.block_width_height, screen_y, (0,0,0))
+        self.wall_right = Wall(self.game_frame_left + self.game_frame_width, self.focused_shape_y, self.block_width_height, screen_y, (0,0,0))
         self.wall_bottom = Wall(self.game_frame_left, screen_y, self.game_frame_width, self.block_width_height, (0,0,0))
         self.wall_top = Wall(self.game_frame_left, -(self.block_width_height), self.game_frame_left + self.game_frame_width, self.block_width_height, (0,0,0))
 
-        # init next focused shape
-        self.next_focused_shape = Shape(500, 100, self.block_width_height)
-
-        # init focused shape
-        self.focused_shape = Shape(280,-(40), self.block_width_height)
+        # init next focused shape and frame
+        self.next_focused_shape_x = self.block_width_height * 16
+        self.next_focused_shape_y = self.block_width_height * 5
+        self.next_focused_shape = Shape(self.next_focused_shape_x, self.next_focused_shape_y, self.block_width_height)
+        self.next_focused_shape_frame_rect = pygame.Rect(self.game_frame_width + (self.block_width_height * 2), self.block_width_height * 3, self.block_width_height * 6, self.block_width_height * 5)
 
         # init rest of blocks logic
         self.fixed_rects = []
@@ -67,7 +72,7 @@ class GameplayScene(Scene):
             pygame.draw.rect(surface, pygame.Color(255, 255, 255, 255), pygame.Rect(self.game_frame_left, j, self.game_frame_width, 1))
 
         # focused frame
-        pygame.draw.rect(surface, pygame.Color(255,255,255,255), pygame.Rect(450,60,120,100), 2)
+        pygame.draw.rect(surface, pygame.Color(255,255,255,255), self.next_focused_shape_frame_rect, 2)
 
         # next focused shape
         self.next_focused_shape.draw(surface)
@@ -96,10 +101,6 @@ class GameplayScene(Scene):
                     if self.focused_shape.has_collide_wall(self.wall_right):
                         self.focused_shape.move_left()
 
-        # walls dont need to be updated
-
-        # next focused shape
-
         # focused shape
         #print(self.update_factor)
         if self.update_factor == self.fall_update_factor:
@@ -116,9 +117,9 @@ class GameplayScene(Scene):
             #for i in range(0, len(self.focused_shape.rect_list)):
             #    self.fixed_rects.append(self.focused_shape.rect_list[i])
             #    self.fixed_rects_color.append([self.focused_shape.rgb1, self.focused_shape.rgb2])
-            self.next_focused_shape.reset_coordinates(280,-(40))
+            self.next_focused_shape.reset_coordinates(self.focused_shape_x,self.focused_shape_y)
             self.focused_shape = self.next_focused_shape
-            self.next_focused_shape = Shape(500, 100, self.block_width_height)
+            self.next_focused_shape = Shape(self.next_focused_shape_x, self.next_focused_shape_y, self.block_width_height)
             
         # collision top wall - fixed shapes
         if self.wall_top.rect.collidelist(self.fixed_rects) is not -1:
