@@ -28,6 +28,8 @@ class GameplayScene(Scene):
         self.block_width_height = block_width_height
         self.fall_update_factor = fall_update_factor
         self.update_factor = 0
+        self.width_block_no = int(self.game_frame_width / self.block_width_height)
+        self.height_block_no = int(self.game_frame_heignt / self.block_width_height)
 
         # init focused shape
         self.focused_shape_x = (int((self.game_frame_width / self.block_width_height) / 2) - 1) * self.block_width_height
@@ -49,6 +51,8 @@ class GameplayScene(Scene):
         # init rest of blocks logic
         self.fixed_rects = []
         self.fixed_rects_color = []
+        self.column_count_per_row = [[0 for _ in range(self.width_block_no)] for _ in range(self.height_block_no)]
+        self.fixed_rects_dict = {}
     
     def get_scene_type(self):
         return 2
@@ -83,9 +87,12 @@ class GameplayScene(Scene):
         # rest of blocks
         #for rect in self.fixed_rects:
             #pygame.draw.rect(surface, pygame.Color(255,255,255), rect)
-        for i in range(0, len(self.fixed_rects)):
-            pygame.draw.rect(surface, self.fixed_rects_color[i][0], self.fixed_rects[i])
-            pygame.draw.rect(surface, self.fixed_rects_color[i][1], self.fixed_rects[i], 2)
+        #for i in range(0, len(self.fixed_rects)):
+        #    pygame.draw.rect(surface, self.fixed_rects_color[i][0], self.fixed_rects[i])
+        #    pygame.draw.rect(surface, self.fixed_rects_color[i][1], self.fixed_rects[i], 2)
+        for key in self.fixed_rects_dict:
+            pygame.draw.rect(surface, self.fixed_rects_dict[key][0], self.fixed_rects_dict[key][2])
+            pygame.draw.rect(surface, self.fixed_rects_dict[key][1], self.fixed_rects_dict[key][2], 2)
 
     def update(self, events):
         for event in events:
@@ -113,8 +120,13 @@ class GameplayScene(Scene):
         if self.focused_shape.has_collide_wall(self.wall_bottom) or self.focused_shape.has_collide_fixed(self.fixed_rects):
             self.focused_shape.move_up()
             self.fixed_rects.extend(self.focused_shape.rect_list)
-            self.fixed_rects_color.extend([[self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2]])
-            #for i in range(0, len(self.focused_shape.rect_list)):
+            #self.fixed_rects_color.extend([[self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2]])
+            for i in range(0, len(self.focused_shape.rect_list)):
+                print()
+                self.fixed_rects_dict[(int(self.focused_shape.rect_list[i].y / self.block_width_height), self.focused_shape.rect_list[i].x / self.block_width_height)] = (self.focused_shape.rgb1, self.focused_shape.rgb2, self.focused_shape.rect_list[i])
+                self.column_count_per_row[int(self.focused_shape.rect_list[i].y / self.block_width_height)][int(self.focused_shape.rect_list[i].x / self.block_width_height)] = 1
+            print(*self.column_count_per_row, sep="\n")
+            print("\n")
             #    self.fixed_rects.append(self.focused_shape.rect_list[i])
             #    self.fixed_rects_color.append([self.focused_shape.rgb1, self.focused_shape.rgb2])
             self.next_focused_shape.reset_coordinates(self.focused_shape_x,self.focused_shape_y)
@@ -122,6 +134,25 @@ class GameplayScene(Scene):
             self.next_focused_shape = Shape(self.next_focused_shape_x, self.next_focused_shape_y, self.block_width_height)
             
         # collision top wall - fixed shapes
-        if self.wall_top.rect.collidelist(self.fixed_rects) is not -1:
+        #if self.wall_top.rect.collidelist(self.fixed_rects) is not -1:
             # game over - return value
-            pass
+        #    pass
+
+        # row full deletion
+        for row in reversed(self.column_count_per_row):
+            if (sum(row) == self.width_block_no):
+                row_no = self.column_count_per_row.index(row)
+                #print("row " + str(self.column_count_per_row.index(row)) + " is filled")
+                #iterate through dictionary and del row and shift rest above row down
+                for key in list(self.fixed_rects_dict):
+                    y,_ = key
+                    if (y == row_no):
+                        del self.fixed_rects_dict[key]
+                    # else: # below block of code may not work due to overwriting existing space
+                    #     temp = self.fixed_rects_dict[key]
+                    #     temp[2].y = temp[2].y + self.block_width_height
+                    #     del self.fixed_rects_dict[key]
+                    #     self.fixed_rects_dict[y + 1, _] = temp
+
+                #iterate through array and del row and shift rest above row down
+                self.column_count_per_row[row_no] = [0 for _ in range(self.width_block_no)]
