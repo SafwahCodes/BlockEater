@@ -53,7 +53,8 @@ class GameplayScene(Scene):
         self.fixed_rects_color = []
         self.column_count_per_row = [[0 for _ in range(self.width_block_no)] for _ in range(self.height_block_no)]
         self.fixed_rects_dict = {}
-    
+        self.grid = [[False for _ in range(self.width_block_no)] for _ in range(self.height_block_no)]
+
     def get_scene_type(self):
         return 2
 
@@ -85,14 +86,13 @@ class GameplayScene(Scene):
         self.focused_shape.draw(surface)
 
         # rest of blocks
-        #for rect in self.fixed_rects:
-            #pygame.draw.rect(surface, pygame.Color(255,255,255), rect)
-        #for i in range(0, len(self.fixed_rects)):
-        #    pygame.draw.rect(surface, self.fixed_rects_color[i][0], self.fixed_rects[i])
-        #    pygame.draw.rect(surface, self.fixed_rects_color[i][1], self.fixed_rects[i], 2)
-        for key in self.fixed_rects_dict:
-            pygame.draw.rect(surface, self.fixed_rects_dict[key][0], self.fixed_rects_dict[key][2])
-            pygame.draw.rect(surface, self.fixed_rects_dict[key][1], self.fixed_rects_dict[key][2], 2)
+        for y in range(0, len(self.grid)):
+            for x in range(0, len(self.grid[y])):
+                if (self.grid[y][x] != False):
+                    rgb1, rgb2 = self.grid[y][x]
+                    rect = pygame.Rect(x * self.block_width_height, y * self.block_width_height, self.block_width_height, self.block_width_height)
+                    pygame.draw.rect(surface, rgb1, rect)
+                    pygame.draw.rect(surface, rgb2, rect, 2)
 
     def update(self, events):
         for event in events:
@@ -109,7 +109,6 @@ class GameplayScene(Scene):
                         self.focused_shape.move_left()
 
         # focused shape
-        #print(self.update_factor)
         if self.update_factor == self.fall_update_factor:
             self.focused_shape.update()
             self.update_factor = 0
@@ -117,42 +116,38 @@ class GameplayScene(Scene):
             self.update_factor += 1
 
         # collision bottom wall
-        if self.focused_shape.has_collide_wall(self.wall_bottom) or self.focused_shape.has_collide_fixed(self.fixed_rects):
+        if self.focused_shape.has_collide_wall(self.wall_bottom): # or self.focused_shape.has_collide_fixed(self.fixed_rects): # need to fix this
             self.focused_shape.move_up()
             self.fixed_rects.extend(self.focused_shape.rect_list)
-            #self.fixed_rects_color.extend([[self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2], [self.focused_shape.rgb1, self.focused_shape.rgb2]])
             for i in range(0, len(self.focused_shape.rect_list)):
-                print()
-                self.fixed_rects_dict[(int(self.focused_shape.rect_list[i].y / self.block_width_height), self.focused_shape.rect_list[i].x / self.block_width_height)] = (self.focused_shape.rgb1, self.focused_shape.rgb2, self.focused_shape.rect_list[i])
-                self.column_count_per_row[int(self.focused_shape.rect_list[i].y / self.block_width_height)][int(self.focused_shape.rect_list[i].x / self.block_width_height)] = 1
-            print(*self.column_count_per_row, sep="\n")
-            print("\n")
-            #    self.fixed_rects.append(self.focused_shape.rect_list[i])
-            #    self.fixed_rects_color.append([self.focused_shape.rgb1, self.focused_shape.rgb2])
+                rect = self.focused_shape.rect_list[i]
+                x = int(rect.x / self.block_width_height)
+                y = int(rect.y / self.block_width_height)
+                self.grid[y][x] = (self.focused_shape.rgb1, self.focused_shape.rgb2)
             self.next_focused_shape.reset_coordinates(self.focused_shape_x,self.focused_shape_y)
             self.focused_shape = self.next_focused_shape
             self.next_focused_shape = Shape(self.next_focused_shape_x, self.next_focused_shape_y, self.block_width_height)
             
         # collision top wall - fixed shapes
-        #if self.wall_top.rect.collidelist(self.fixed_rects) is not -1:
-            # game over - return value
-        #    pass
 
         # row full deletion
-        for row in reversed(self.column_count_per_row):
-            if (sum(row) == self.width_block_no):
-                row_no = self.column_count_per_row.index(row)
-                #print("row " + str(self.column_count_per_row.index(row)) + " is filled")
-                #iterate through dictionary and del row and shift rest above row down
-                for key in list(self.fixed_rects_dict):
-                    y,_ = key
-                    if (y == row_no):
-                        del self.fixed_rects_dict[key]
-                    # else: # below block of code may not work due to overwriting existing space
-                    #     temp = self.fixed_rects_dict[key]
-                    #     temp[2].y = temp[2].y + self.block_width_height
-                    #     del self.fixed_rects_dict[key]
-                    #     self.fixed_rects_dict[y + 1, _] = temp
-
-                #iterate through array and del row and shift rest above row down
-                self.column_count_per_row[row_no] = [0 for _ in range(self.width_block_no)]
+        for row in reversed(self.grid):
+            row_fill = 0
+            for cell in row:
+                if (cell == False):
+                    break
+                else:
+                    row_fill += 1
+            if (row_fill == self.width_block_no):
+                index = self.grid.index(row)
+                print("row " + str(index) + " is full")
+                self.grid[index] = [False for _ in range(self.width_block_no)]
+                #iterate through rows above this row to shift down
+                print(*self.grid, sep="\n")
+                print("\n")
+                for i in range(index, -1, -1):
+                    if (i > 0):
+                        self.grid[i] = self.grid[i -1]
+                    else:
+                        self.grid[i] = [False for _ in range(self.width_block_no)]
+                print(*self.grid, sep="\n")
