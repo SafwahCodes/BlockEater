@@ -49,11 +49,8 @@ class GameplayScene(Scene):
         self.next_focused_shape_frame_rect = pygame.Rect(self.game_frame_width + (self.block_width_height * 2), self.block_width_height * 3, self.block_width_height * 6, self.block_width_height * 5)
 
         # init rest of blocks logic
-        self.fixed_rects = []
-        self.fixed_rects_color = []
-        self.column_count_per_row = [[0 for _ in range(self.width_block_no)] for _ in range(self.height_block_no)]
-        self.fixed_rects_dict = {}
         self.grid = [[False for _ in range(self.width_block_no)] for _ in range(self.height_block_no)]
+        self.grid_rect_list = []
 
     def get_scene_type(self):
         return 2
@@ -98,7 +95,7 @@ class GameplayScene(Scene):
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE: # focused shape rotate
-                    self.focused_shape.rotate() # need to fix
+                    self.focused_shape.rotate()
                 elif event.key == pygame.K_LEFT: # focused shape move left
                     self.focused_shape.move_left()
                     if self.focused_shape.has_collide_wall(self.wall_left):
@@ -116,14 +113,14 @@ class GameplayScene(Scene):
             self.update_factor += 1
 
         # collision bottom wall
-        if self.focused_shape.has_collide_wall(self.wall_bottom): # or self.focused_shape.has_collide_fixed(self.fixed_rects): # need to fix this
+        if self.focused_shape.has_collide_wall(self.wall_bottom) or self.focused_shape.has_collide_fixed(self.grid_rect_list):
             self.focused_shape.move_up()
-            self.fixed_rects.extend(self.focused_shape.rect_list)
             for i in range(0, len(self.focused_shape.rect_list)):
                 rect = self.focused_shape.rect_list[i]
                 x = int(rect.x / self.block_width_height)
                 y = int(rect.y / self.block_width_height)
                 self.grid[y][x] = (self.focused_shape.rgb1, self.focused_shape.rgb2)
+                self.grid_rect_list.append(rect)
             self.next_focused_shape.reset_coordinates(self.focused_shape_x,self.focused_shape_y)
             self.focused_shape = self.next_focused_shape
             self.next_focused_shape = Shape(self.next_focused_shape_x, self.next_focused_shape_y, self.block_width_height)
@@ -142,7 +139,6 @@ class GameplayScene(Scene):
                 index = self.grid.index(row)
                 print("row " + str(index) + " is full")
                 self.grid[index] = [False for _ in range(self.width_block_no)]
-                #iterate through rows above this row to shift down
                 print(*self.grid, sep="\n")
                 print("\n")
                 for i in range(index, -1, -1):
@@ -150,4 +146,10 @@ class GameplayScene(Scene):
                         self.grid[i] = self.grid[i -1]
                     else:
                         self.grid[i] = [False for _ in range(self.width_block_no)]
-                print(*self.grid, sep="\n")
+                self.grid_rect_list.clear()
+                for y in range(0, len(self.grid)):
+                    for x in range(0, len(self.grid[y])):
+                        if (self.grid[y][x] != False):
+                            rect = pygame.Rect(x * self.block_width_height, y * self.block_width_height,
+                                               self.block_width_height, self.block_width_height)
+                            self.grid_rect_list.append(rect)
